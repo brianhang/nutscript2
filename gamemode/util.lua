@@ -37,7 +37,7 @@ function nut.util.includeDir(directory, state, relative)
     if (relative) then
         baseDir = ""
     else
-        baseDir = (gmod.GetGamemode() or GM).FolderName.."/"
+        baseDir = (GM or gmod.GetGamemode()).FolderName.."/gamemode/"
     end
 
     -- Remove the trailing slash if it exists.
