@@ -33,11 +33,14 @@ end
 function nut.util.includeDir(directory, state, relative)
     -- Get where to start searching for files from.
     local baseDir
-   
+
     if (relative) then
         baseDir = ""
     else
-        baseDir = (GM or gmod.GetGamemode()).FolderName.."/gamemode/"
+        local gamemode = GM and GM.FolderName or engine.ActiveGamemode()
+                         or "nutscript2"
+
+        baseDir = gamemode.."/gamemode/"
     end
 
     -- Remove the trailing slash if it exists.
