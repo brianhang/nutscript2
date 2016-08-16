@@ -32,6 +32,14 @@ local PLAYER = FindMetaTable("Player")
 function nut.util.findPlayer(name, allowPatterns)
     assert(type(name) == "string", "name is not a string")
 
+    -- Try finding direct matches first.
+    for _, client in ipairs(player.GetAll()) do
+        if (client:Name() == name) then
+            return client
+        end
+    end
+
+    -- Then try a looser search.
     if (not allowPatterns) then
         name = string.PatternSafe(name)
     end
@@ -93,7 +101,7 @@ function PLAYER:doStaredAction(entity, time, callback, onCancel, distance)
             trace.endpos = trace.start
                            + self:GetAimVector()*(distance or STARE_DISTANCE)
 
-            if (util.TraceLine(data).Entity ~= entity) then
+            if (util.TraceLine(trace).Entity ~= entity) then
                 cancelFunc()
             elseif (callback and timer.RepsLeft(timerID) == 0) then
                 callback()
@@ -110,8 +118,8 @@ end
 -- Find a player to drop an entity in front of a player.
 function PLAYER:getItemDropPos()
     local trace = util.TraceLine({
-        start = self:GetShootPos() - self:GetAimVector()*DROP_POS_BACK
-        endpos = self:GetShootPos() + self:GetAimVector()*DROP_POS_FRONT
+        start = self:GetShootPos() - self:GetAimVector()*DROP_POS_BACK,
+        endpos = self:GetShootPos() + self:GetAimVector()*DROP_POS_FRONT,
         filter = self
     })
 
@@ -131,6 +139,6 @@ local length2D = FindMetaTable("Vector").Length2D
 
 -- Check whether or not a player is running.
 function PLAYER:isRunning()
-    return length2D(self.GetVelocity(self))
-           > length2D(self.GetWalkSpeed(self) + SPEED_BARRIER)
+    return length2D(self.GetVelocity(self)) >
+           length2D(self.GetWalkSpeed(self) + SPEED_BARRIER)
 end

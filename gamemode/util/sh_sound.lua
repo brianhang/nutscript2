@@ -6,14 +6,14 @@ Purpose: Creates a utility function for playing queued sounds.
 local ADJUST_SOUND = SoundDuration("npc/metropolice/pain1.wav") > 0
                      and "" or "../../hl2/sound/"
 
-    -- Emits sounds one after the other from an entity.
+-- Emits sounds one after the other from an entity.
 function nut.util.emitQueuedSounds(entity, sounds, delay, spacing,
 volume, pitch)
     assert(type(sounds) == "table", "sounds is not a table")
 
     -- Let there be a delay before any sound is played.
-    delay = delay or 0
-    spacing = spacing or 0.1
+    delay = tonumber(delay) or 0
+    spacing = tonumber(spacing) or 0.1
 
     -- Loop through all of the sounds.
     for k, v in ipairs(sounds) do
@@ -35,7 +35,7 @@ volume, pitch)
         timer.Simple(delay, function()
             -- Check if the entity still exists and play the sound.
             if (IsValid(entity)) then
-                entity:EmitSound(tostring(v), volume, pitch)
+                entity:EmitSound(tostring(v), tonumber(volume), tonumber(pitch))
             end
         end)
 

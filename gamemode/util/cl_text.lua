@@ -4,7 +4,7 @@ Purpose: Creates utility functions for drawing text on the screen.
 --]]
 
 -- How transparent a text's shadow should be compared to the text color.
-local SHADOW_ALPHA_RATIO = 0.575
+local SHADOW_ALPHA_RATIO = 0.67
 
 -- Indices for text position.
 local POSITION_X = 1
@@ -13,7 +13,7 @@ local POSITION_Y = 2
 -- Create a generic font to use in case one is not given.
 surface.CreateFont("nutGenericFont", {
     font = "Arial",
-    size = 12,
+    size = 16,
     weight = 500
 })
 
@@ -40,7 +40,10 @@ function nut.util.drawText(text, x, y, color, alignX, alignY, font, alpha)
 end
 
 -- Wraps text so it does not pass a certain width.
-function nut.util.wrapText(text, width, font)
+function nut.util.wrapText(text, maxWidth, font)
+    assert(type(text) == "string", "text is not a string")
+    assert(type(maxWidth) == "number", "maxWidth is not a number")
+
     -- Set the surface font so size data works.
     font = font or "nutGenericFont"
     surface.SetFont(font)
@@ -53,7 +56,7 @@ function nut.util.wrapText(text, width, font)
     local maxW = 0
     
     -- Don't wrap if it is not needed.
-    if (w <= width) then
+    if (w <= maxWidth) then
         return {(text:gsub("%s", " "))}, w
     end
     
@@ -64,7 +67,7 @@ function nut.util.wrapText(text, width, font)
         line = line.." "..word
         w = surface.GetTextSize(line)
         
-        if (w > width) then
+        if (w > maxWidth) then
             lines[#lines + 1] = line
             line = ""
             
