@@ -12,20 +12,20 @@ nut.util = nut.util or {}
 
 -- Includes a file with handling of state using the file's name.
 function nut.util.include(path, state)
-    if (path:find("sv_") and SERVER) then
-        include(path)
-    elseif (path:find("cl_")) then
+    if (state == "server" or path:find("sv_") and SERVER) then
+        return include(path)
+    elseif (state == "client" or path:find("cl_")) then
         if (SERVER) then
             AddCSLuaFile(path)
         else
-            include(path)
+            return include(path)
         end
-    elseif (path:find("sh_")) then
+    elseif (state == "shared" or path:find("sh_")) then
         if (SERVER) then
             AddCSLuaFile(path)
         end
 
-        include(path)
+        return include(path)
     end
 end
 
@@ -50,7 +50,7 @@ function nut.util.includeDir(directory, state, relative)
 
     -- Include all files within the directory.
     for _, path in ipairs(file.Find(baseDir..directory.."/*.lua", "LUA")) do
-        nut.util.include(baseDir..directory.."/"..path)
+        nut.util.include(baseDir..directory.."/"..path, state)
     end
 end
 

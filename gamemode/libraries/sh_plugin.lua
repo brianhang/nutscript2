@@ -27,22 +27,24 @@ function nut.plugin.addComponent(name, info)
     nut.plugin.components[name] = info
 end
 
--- Loads all available plugins.
-function nut.plugin.initialize()
-    local function includePluginDir(base)
-        local files, folders = file.Find(base.."/plugins/*", "LUA")
+-- Includes plugins within a given directory.
+local function includePluginDir(base)
+    local files, folders = file.Find(base.."/plugins/*", "LUA")
 
-        for _, path in ipairs(files) do
-            nut.plugin.load(path:sub(1, EXT_START - 1), base.."/plugins/"..path)
-        end
-
-        for _, path in ipairs(folders) do
-            nut.plugin.load(path, base.."/plugins/"..path)
-        end
+    for _, path in ipairs(files) do
+        nut.plugin.load(path:sub(1, EXT_START - 1), base.."/plugins/"..path)
     end
 
+    for _, path in ipairs(folders) do
+        nut.plugin.load(path, base.."/plugins/"..path)
+    end
+end
+
+-- Loads all available plugins.
+function nut.plugin.initialize()
     includePluginDir("nutscript2")
     includePluginDir(engine.ActiveGamemode())
+    includePluginDir("ns_plugins")
 
     hook.Run("PluginInitialized")
 end
@@ -66,9 +68,15 @@ function nut.plugin.load(id, path, name)
     -- Make this table globally accessible.
     _G[name:upper()] = plugin
 
+    -- Warn if this plugin is overriding another plugin.
+    if (nut.plugins[id] and nut.plugins[id].path ~= path) then
+        ErrorNoHalt("[WARNING] Plugin '"..id.."' is being overridden by "..
+                    "another plugin with the same name.\n")
+    end
+
     -- Check if we are including a single file or a folder.
     if (path:sub(EXT_START) == ".lua") then
-        nut.util.include(path)
+        nut.util.include(path, "shared")
         usingFile = true
     else
         assert(file.Exists(path.."/sh_"..name..".lua", "LUA"),
@@ -102,7 +110,7 @@ function nut.plugin.loadComponents(plugin)
     for name, component in pairs(nut.plugin.components) do
         if (type(component.onInclude) == "function" and
             hook.Run("PluginComponentShouldLoad", plugin, name) ~= false) then
-            component.onInclude(plugin, path)
+            component.onInclude(plugin, plugin.path)
         end
     end
 
@@ -124,3 +132,10 @@ function nut.plugin.register(plugin)
     -- Add the plugin to the list of plugins.
     nut.plugins[tostring(plugin.id)] = plugin
 end
+
+-- Allow plugins to load their own plugins.
+nut.plugin.addComponent("plugins", {
+    onInclude = function(plugin, path)
+        includePluginDir(path)
+    end
+})
