@@ -4,9 +4,6 @@ Purpose: Creates the functions responsible for managing characters between
          the server and the database.
 --]]
 
-
-util.AddNetworkString("nutCharData")
-
 if (not nut.char) then
     nut.util.include("sh_character.lua")
 end
@@ -15,7 +12,10 @@ if (not nut.db) then
     nut.util.include("sv_database.lua")
 end
 
+util.AddNetworkString("nutCharData")
 util.AddNetworkString("nutCharDelete")
+util.AddNetworkString("nutCharTempVar")
+util.AddNetworkString("nutCharVar")
 
 -- How many bits are in a long integer.
 local LONG = 32
@@ -173,7 +173,7 @@ function nut.char.load(id, callback, reload)
 
                 -- Store the retrieved value.
                 if (field) then
-                    character.vars.data[name] = value
+                    character.vars[name] = value
                 end
             end
 

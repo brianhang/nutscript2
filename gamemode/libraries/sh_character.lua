@@ -14,6 +14,9 @@ CHARVAR_PUBLIC = 0
 CHARVAR_PRIVATE = 1
 CHARVAR_NONE = 2
 
+-- Empty function for doing nothing when saving.
+CHARVAR_NOSAVE = function() end
+
 nut.char = nut.char or {}
 nut.char.list = nut.char.list or {}
 nut.char.vars = {}
@@ -21,9 +24,60 @@ nut.char.vars = {}
 if (CLIENT) then
     -- Removes a character on the client.
     net.Receive("nutCharDelete", function()
+        -- Get the character that is being removed.
         local id = net.ReadUInt(32)
 
+        -- Remove the character.
         nut.char.delete(id)
+        hook.Run("CharacterDeleted", id)
+    end)
+
+    -- Sets a character variable.
+    net.Receive("nutCharVar", function()
+        -- Read the information.
+        local id = net.ReadUInt(32)
+        local key = net.ReadString()
+        local value = net.ReadType()
+
+        -- Get the character from the ID.
+        local character = nut.char.list[id] or nut.char.new(id)
+        local oldValue = character.vars[key]
+
+        -- Update the variable.
+        character.vars[key] = value
+        hook.Run("CharacterVarChanged", character, key, oldValue, value)
+    end)
+
+    -- Sets a character data value.
+    net.Receive("nutCharData", function()
+        -- Read the information.
+        local id = net.ReadUInt(32)
+        local key = net.ReadString()
+        local value = net.ReadType()
+
+        -- Get the character from the ID.
+        local character = nut.char.list[id] or nut.char.new(id)
+        local oldValue = character.vars.data[key]
+
+        -- Update the data value.
+        character.vars.data[key] = value
+        hook.Run("CharacterDataChanged", character, key, oldValue, value)
+    end)
+
+    -- Sets a character temporary variable.
+    net.Receive("nutCharTempVar", function()
+        -- Read the information.
+        local id = net.ReadUInt(32)
+        local key = net.ReadString()
+        local value = net.ReadType()
+
+        -- Get the character from the ID.
+        local character = nut.char.list[id] or nut.char.new(id)
+        local oldValue = character.vars.var[key]
+
+        -- Update the data value.
+        character.vars.var[key] = value
+        hook.Run("CharacterTempVarChanged", character, key, oldValue, value)
     end)
 end
 
@@ -120,8 +174,14 @@ function nut.char.registerVar(name, info)
 
         character["set"..upperName] = function(self, value, ...)
             -- Run the custom setter if given.
-            if (customSet and info.onSet(self, value, ...) == false) then
-                return
+            if (customSet) then
+                local override, newValue = info.onSet(self, value, ...)
+
+                if (override) then
+                    value = newValue
+                else
+                    return
+                end
             end
 
             -- Store the given value.

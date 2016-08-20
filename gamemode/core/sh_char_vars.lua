@@ -16,7 +16,7 @@ nut.char.registerVar("id", {
     default = -1,
     field = "id",
     isConstant = true,
-    onSave = function() end,
+    onSave = CHARVAR_NOSAVE,
     replication = CHARVAR_PUBLIC,
 })
 
@@ -42,19 +42,8 @@ nut.char.registerVar("model", {
         if (IsValid(client)) then
             client:SetModel(value)
         end
-
-        character.vars.model = value
     end,
-    onGet = function(character)
-        local client = character:getPlayer()
-
-        if (IsValid(client)) then
-            return client:GetModel()
-        end
-
-        return character.vars.model
-    end,
-    replication = CHARVAR_NONE,
+    replication = CHARVAR_PUBLIC,
     notNull = true
 })
 
@@ -73,16 +62,7 @@ nut.char.registerVar("team", {
             client:SetTeam(value)
         end
     end,
-    onGet = function(character, value)
-        local client = character:getPlayer()
-
-        if (IsValid(client)) then
-            return client:Team()
-        end
-
-        return character.vars.team
-    end,
-    replication = CHARVAR_NONE
+    replication = CHARVAR_PUBLIC
 })
 
 -- Alias for class data value.
@@ -184,8 +164,7 @@ nut.char.registerVar("data", {
     end,
     onGet = function(character, key, default)
         return character.vars.data[key] or default
-    end,
-    replication = CHARVAR_NONE
+    end
 })
 
 nut.char.registerVar("var", {
@@ -199,7 +178,7 @@ nut.char.registerVar("var", {
             return
         end
 
-        net.Start("nutCharVar")
+        net.Start("nutCharTempVar")
         net.WriteUInt(character:getID(), 32)
         net.WriteString(key)
         net.WriteType(value)
@@ -218,6 +197,40 @@ nut.char.registerVar("var", {
     end,
     onGet = function(character, key, default)
         return character.vars.var[key] or default
+    end
+})
+
+nut.char.registerVar("owner", {
+    default = "",
+    field = "steamID",
+    onSet = function(character, steamID)
+        -- Convert players to a 64-bit SteamID.
+        if (type(steamID) == "Player") then
+            if (not IsValid(steamID)) then
+                error("The new owner is not a valid player")
+            end
+
+            steamID = steamID:SteamID64() or 0
+        elseif (type(steamID) ~= "string") then
+            error("The new owner must be a player or a string")
+        end
+
+        -- Remove the old owner.
+        local oldOwner = character:getPlayer()
+
+        if (IsValid(oldOwner) and oldOwner:getChar() == character) then
+            character:kick()
+        end
+
+
+        -- Update the database immediately.
+        steamID = nut.db.escape(steamID)
+        nut.db.query("UPDATE "..CHARACTERS.." SET steamID = "..steamID..
+                     " WHERE id = "..character:getID())
+
+        -- Override owner to be the SteamID if it was a player.
+        return true, steamID
     end,
-    replication = CHARVAR_NONE
+    onSave = CHARVAR_NOSAVE,
+    replication = CHARVAR_PUBLIC
 })

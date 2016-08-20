@@ -200,7 +200,7 @@ function nut.db.update(tableName, data, condition, callback, limit)
     query = query.." SET "..table.concat(updates, ",")
 
     -- Add the condition if given.
-    if (conditon) then
+    if (condition) then
         query = query.." WHERE "..tostring(condition)
     end
 
