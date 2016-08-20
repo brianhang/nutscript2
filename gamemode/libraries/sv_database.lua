@@ -5,7 +5,7 @@ Purpose: Allows for easy access to a database so one can store and load
 --]]
 
 -- Types of values that can be encoded using pON.
-local ENCODE_TYPES = {}
+ENCODE_TYPES = {}
 ENCODE_TYPES["Angle"] = true
 ENCODE_TYPES["Vector"] = true
 ENCODE_TYPES["table"] = true

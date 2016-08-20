@@ -27,6 +27,9 @@ nut.db.modules.sqlite = {
             if (type(callback) == "function") then
                 callback()
             end
+
+            ErrorNoHalt("Query failed! ("..value..")\n")
+            ErrorNoHalt(nut.db.lastError.."\n")
         end
     end,
     escape = function(value)

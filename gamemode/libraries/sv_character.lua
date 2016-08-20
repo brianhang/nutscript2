@@ -4,6 +4,7 @@ Purpose: Creates the functions responsible for managing characters between
          the server and the database.
 --]]
 
+
 util.AddNetworkString("nutCharData")
 
 if (not nut.char) then
@@ -103,9 +104,21 @@ function nut.char.insert(info, callback)
 end
 
 -- Loads a character from the database into an instance.
-function nut.char.load(id, callback)
+function nut.char.load(id, callback, reload)
     assert(type(id) == "number", "id is not a number")
     assert(id >= 0, "id can not be negative")
+
+    -- Don't load the character if it already exists.
+    if (not reload and nut.char.list[id]) then
+        if (type(callback) == "function") then
+            callback(nut.char.list[id])
+        end
+
+        return
+    end
+
+    -- The character that contains the results of loading.
+    local character
 
     -- Get the fields that are needed to load the character.
     local fields = {}
@@ -118,7 +131,61 @@ function nut.char.load(id, callback)
 
     -- Load the data from the database.
     nut.db.select(CHARACTERS, fields, "id = "..id, function(result)
-        PrintTable(result)
+        if (result and result[1]) then
+            result = result[1]
+            
+            -- Create a character object to store the results.
+            character = nut.char.new(id)
+
+            -- Load variables from the results.
+            for name, variable in pairs(nut.char.vars) do
+                local field = variable.field
+                local value = result[field]
+
+                -- Allow for custom loading of this variable.
+                if (type(variable.onLoad) == "function") then
+                    variable.onLoad(character)
+
+                    continue
+                end
+                
+                -- Convert the string value to the correct Lua type.
+                if (variable.default and field and value) then
+                    -- Get the suggested type.
+                    local defaultType = type(variable.default)
+
+                    -- Convert to the suggested type if applicable.
+                    if (ENCODE_TYPES[defaultType]) then
+                        local status, result = pcall(pon.decode, value)
+
+                        if (status) then
+                            value = result[1]
+                        else
+                            ErrorNoHalt("Failed to decode "..name.." for "..
+                                        "character #"..id..".\n")
+                        end
+                    elseif (defaultType == "number") then
+                        value = tonumber(value)
+                    elseif (defaultType == "boolean") then
+                        value = tobool(value)
+                    end
+                end
+
+                -- Store the retrieved value.
+                if (field) then
+                    character.vars.data[name] = value
+                end
+            end
+
+        else
+            ErrorNoHalt("Failed to load character #"..id.."\n"..
+                        nut.db.lastError.."\n")
+        end
+
+        -- Run the callback if one is given.
+        if (type(callback) == "function") then
+            callback(character)
+        end
     end, 1)
 end
 
@@ -175,7 +242,7 @@ hook.Add("Initialize", "nutCharTableSetup", function()
     -- Set global variables for the character tables.
     CHARACTERS = engine.ActiveGamemode():lower().."_characters"
     CHAR_DATA = engine.ActiveGamemode():lower().."_chardata"
-    print(engine.ActiveGamemode()) 
+
     -- Create the tables themselves.
     if (nut.db.sqlModule == nut.db.modules.sqlite) then
         nut.db.query(SQLITE_CHARACTER:format(CHARACTERS))

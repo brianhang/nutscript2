@@ -57,9 +57,14 @@ end
 function nut.char.new(id)
     assert(type(id) == "number", "id is not a number")
 
-    local character = setmetatable({}, nut.meta.character)
-    character.id = id
+    -- Create a character object.
+    -- Note vars is deep copied so there are no side effects.
+    local character = setmetatable({
+        id = id,
+        vars = table.Copy(nut.meta.character.vars)
+    }, nut.meta.character)
 
+    -- Store the character for later use.
     nut.char.list[id] = character
 
     return character
@@ -94,7 +99,7 @@ function nut.char.registerVar(name, info)
     -- Create the setter function.
     if (not info.isConstant) then
         -- Whether or not info.set is a function.
-        local customSet = type(info.set) == "function"
+        local customSet = type(info.onSet) == "function"
 
         -- Determine how the variable will be networked.
         local send
@@ -115,7 +120,7 @@ function nut.char.registerVar(name, info)
 
         character["set"..upperName] = function(self, value, ...)
             -- Run the custom setter if given.
-            if (customSet and info.onSet(self, value, ...)) then
+            if (customSet and info.onSet(self, value, ...) == false) then
                 return
             end
 

@@ -10,8 +10,13 @@ CHARACTER.id = 0
 CHARACTER.owner = ""
 CHARACTER.vars = {}
 
+-- Gets the numeric ID for the character.
 function CHARACTER:getID()
     return self.id
+end
+
+-- Gets the player that is the owner of the character.
+function CHARACTER:getPlayer()
 end
 
 if (SERVER) then

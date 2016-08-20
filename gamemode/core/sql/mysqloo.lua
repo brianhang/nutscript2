@@ -83,6 +83,9 @@ nut.db.modules.mysqloo = {
                         callback()
                     end
                 end
+
+                ErrorNoHalt("Query failed! ("..value..")\n")
+                ErrorNoHalt(reason.."\n")
             end
 
             query:start()

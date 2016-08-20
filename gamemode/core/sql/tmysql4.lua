@@ -44,6 +44,9 @@ nut.db.modules.tmysql4 = {
                     data = result.data
                     nut.db.lastID = result.lastid
                 else
+                    ErrorNoHalt("Query failed! ("..value..")\n")
+                    ErrorNoHalt(result.error.."\n")
+
                     nut.db.lastError = result.error
                 end
 

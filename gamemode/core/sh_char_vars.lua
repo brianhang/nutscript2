@@ -6,6 +6,12 @@ Purpose: Sets up default character variables.
 -- The number of bits in a long number.
 local LONG = 32
 
+-- The open curly brace position.
+local TABLE_START = 2
+
+-- The close curly brace position.
+local TABLE_END = -2
+
 nut.char.registerVar("id", {
     default = -1,
     field = "id",
@@ -102,12 +108,20 @@ nut.char.registerVar("data", {
         local id = character:getID()
 
         -- Load all the previous set data values.
-        nut.db.select(CHARACTERS, {"key", "value"}, "id = "..id, function(data)
+        nut.db.select(CHAR_DATA, {"key", "value"}, "id = "..id, function(data)
+            if (not data) then
+                return
+            end
+
+            -- Store all the data into the character's data.
             for i = 1, #data do
                 local key = data[i].key
                 local value = data[i].value
+                local status, result = pcall(pon.decode, "{"..value.."}")
 
-                character.vars.data[key] = pon.decode(value)
+                if (status) then
+                    character.vars.data[key] = result[1]
+                end
             end
         end)
     end,
@@ -119,12 +133,26 @@ nut.char.registerVar("data", {
         local query
 
         if (value ~= nil) then
-            query = "REPLACE INTO "..CHAR_DATA.." (id, key, values) "..
-                          "VALUES (%s, '%s', '%s')"
+            -- Get the encoded data.
+            local status, result = pcall(pon.encode, {value})
+
+            if (not status) then
+                ErrorNoHalt("Failed to set data '"..key.."' to '"..
+                            tostring(value).."' due to encoding error!\n")
+
+                return false
+            end
+
+            local encoded = result:sub(TABLE_START, TABLE_END)
+            
+            -- Create a query to update the data.
+            query = "REPLACE INTO "..CHAR_DATA.." (id, key, value) "..
+                    "VALUES (%s, '%s', '%s')"
             query = query:format(character:getID(),
                                  nut.db.escape(tostring(key)),
-                                 nut.db.escape(pon.encode({value})))
+                                 nut.db.escape(encoded))
         else
+            -- Delete if nil since storing it is not needed.
             query = "DELETE FROM "..CHAR_DATA.." WHERE id=%s AND key='%s'"
             query = query:format(character:getID(),
                                  nut.db.escape(tostring(key)))
@@ -134,7 +162,7 @@ nut.char.registerVar("data", {
 
         -- Don't do any networking if it is not wanted.
         if (recipient == false) then
-            return
+            return false
         end
 
         net.Start("nutCharData")
