@@ -1,137 +1,24 @@
 --[[
-File:    sh_character.lua
+File:    libraries/sh_character.lua
 Purpose: Creates functions to create and manage characters. 
 --]]
 
-if (not nut.db) then
-    nut.util.include("sv_database.lua")
-end
-
-util.AddNetworkString("nutCharDelete")
-
 -- How many bits are in a long integer.
 local LONG = 32
+
+-- Get the second character within a string.
+local SECOND = 2
+
+-- Global enums for types of character variable networking.
+CHARVAR_PUBLIC = 0
+CHARVAR_PRIVATE = 1
+CHARVAR_NONE = 2
 
 nut.char = nut.char or {}
 nut.char.list = nut.char.list or {}
 nut.char.vars = {}
 
-if (SERVER) then
-    -- Inserts and instances a character.
-    function nut.char.create(info, callback, context)
-        assert(type(info) == "table", "info is not a table")
-
-        context = context or {}
-
-        -- Check if the player can create a character.
-        local fault = hook.Run("CharacterPreCreate", info, context)
-
-        if (type(fault) == "string") then
-            return false, fault
-        end
-
-        -- Allow modifications to the given info.
-        hook.Run("CharacterAdjustInfo", info, context)
-
-        -- Make sure there are no extraneous variables.
-        for k, v in pairs(info) do
-            if (not nut.char.vars[k]) then
-                return false, "invalid variable ("..k..")"
-            end
-        end
-
-        -- Insert the character into the database.
-        return nut.char.insert(info, function(id)
-            local character
-
-            if (id) then
-                -- If the character was made, make an object for it and
-                -- copy the given info to the character object.
-                character = nut.char.new(id)
-
-                for k, v in pairs(info) do
-                    character.vars[k] = v
-                end
-
-                hook.Run("CharacterCreated", character, context)
-            end
-
-            if (type(callback) == "function") then
-                callback(character)
-            end
-        end)
-    end
-
-    -- Inserts a character into the database.
-    function nut.char.insert(info, callback)
-        
-    end
-
-    -- The queries needed to create tables for NutScript characters.
-    local MYSQL_CHARACTER = [[
-    CREATE TABLE IF NOT EXISTS `%s` (
-        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-        name VARCHAR NOT NULL,
-        desc TEXT,
-        model VARCHAR NOT NULL,
-        createTime INT UNSIGNED NOT NULL,
-        lastJoin INT UNSIGNED DEFAULT 0,
-        money INT UNSIGNED DEFAULT 0,
-        team TINYINT UNSIGNED DEFAULT NULL,
-        steamID BIGINT UNSIGNED NOT NULL,
-        PRIMARY KEY (id)
-    );
-    ]]
-
-    local MYSQL_CHAR_DATA = [[
-    CREATE TABLE IF NOT EXISTS `%s` (
-        dataID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-        id INT UNSIGNED NOT NULL,
-        key VARCHAR NOT NULL,
-        value VARCHAR NOT NULL,
-        PRIMARY KEY (dataID)
-    );
-    ]]
-
-    local SQLITE_CHARACTER = [[
-    CREATE TABLE IF NOT EXISTS `%s` (
-        id UNSIGNED INTEGER PRIMARY KEY,
-        name TEXT,
-        desc TEXT,
-        model TEXT,
-        createTime UNSIGNED INTEGER,
-        lastJoin UNSIGNED INTEGER,
-        money UNSIGNED INTEGER,
-        team UNSIGNED INTEGER,
-        steamID  UNSIGNED INTEGER
-    );
-    ]]
-
-    local SQLITE_CHAR_DATA = [[
-    CREATE TABLE IF NOT EXISTS `%s` (
-        dataID UNSIGNED INTEGER PRIMARY KEY,
-        id UNSIGNED INTEGER,
-        key TEXT,
-        value TEXT
-    );
-    ]]
-
-    -- Sets up the character table 
-    hook.Add("Initialize", "nutCharTableSetup", function()
-        -- Set global variables for the character tables.
-        CHARACTER = engine.ActiveGamemode():lower().."_characters"
-        CHAR_DATA = engine.ActiveGamemode():lower().."_chardata"
-        print(engine.ActiveGamemode()) 
-        -- Create the tables themselves.
-        if (nut.db.sqlModule == nut.db.modules.sqlite) then
-            nut.db.query(SQLITE_CHARACTER:format(CHARACTER))
-            nut.db.query(SQLITE_CHAR_DATA:format(CHAR_DATA))
-        else
-            nut.db.query(MYSQL_CHARACTER:format(CHARACTER))
-            nut.db.query(MYSQL_CHAR_DATA:format(CHAR_DATA))
-        end
-    end)
-else
+if (CLIENT) then
     -- Removes a character on the client.
     net.Receive("nutCharDelete", function()
         local id = net.ReadUInt(32)
@@ -165,3 +52,130 @@ function nut.char.delete(id, callback)
         hook.Run("CharacterDeleted", id)
     end
 end
+
+-- Creates a character object.
+function nut.char.new(id)
+    assert(type(id) == "number", "id is not a number")
+
+    local character = setmetatable({}, nut.meta.character)
+    character.id = id
+
+    nut.char.list[id] = character
+
+    return character
+end
+
+-- Sets up a character variable for use.
+function nut.char.registerVar(name, info)
+    assert(type(info) == "table", "info is not a table")
+
+    -- Set some default values for the parameters.
+    name = tostring(name)
+    info.replication = info.replication or CHARVAR_PRIVATE
+
+    -- Get the character metatable so we can add setters/getters.
+    local character = nut.meta.character
+
+    -- Get a CamelCase version of name.
+    local upperName = name:sub(1, 1):upper()..name:sub(SECOND)
+
+    -- Store the default in the metatable.
+    character.vars[name] = info.default
+
+    -- Create a getter function.
+    if (type(info.onGet) == "function") then
+        character["get"..upperName] = info.onGet
+    else
+        character["get"..upperName] = function(self)
+            return self.vars[name]
+        end
+    end
+
+    -- Create the setter function.
+    if (not info.isConstant) then
+        -- Whether or not info.set is a function.
+        local customSet = type(info.set) == "function"
+
+        -- Determine how the variable will be networked.
+        local send
+
+        if (info.replication == CHARVAR_PUBLIC) then
+            send = net.Broadcast
+        elseif (info.replication == CHARVAR_PRIVATE) then
+            send = function(self)
+                local client = self:getPlayer()
+
+                if (IsValid(client)) then
+                    net.Send(client)
+                end
+            end
+        elseif (type(info.replication) == "function") then
+            send = info.replication
+        end
+
+        character["set"..upperName] = function(self, value, ...)
+            -- Run the custom setter if given.
+            if (customSet and info.onSet(self, value, ...)) then
+                return
+            end
+
+            -- Store the given value.
+            self.vars[name] = value
+
+            -- Network the variable.
+            if (send) then
+                net.Start("nutCharVar")
+                    net.WriteUInt(self:getID(), LONG)
+                    net.WriteString(name)
+                    net.WriteType(value)
+                send()
+            end
+        end
+    end
+
+    nut.char.vars[name] = info
+end
+
+-- Validates information for character creation.
+function nut.char.validateInfo(info, context)
+    -- Default the context to an empty table.
+    context = context or {}
+
+    -- Check with the character variables.
+    for key, value in pairs(info) do
+        -- Get the variable that the key corresponds to.
+        local variable = nut.char.vars[key]
+
+        -- Make sure there are no invalid variables.
+        if (not variable) then
+            return false, "invalid variable ("..key..")"
+        end
+
+        -- Custom check with onValidate.
+        if (type(variable.onValidate) == "function") then
+            local valid, reason = variable.onValidate(info[key], context)
+
+            if (valid == false) then
+                return false, reason or "invalid value for "..key
+            end
+        end
+    end
+
+    -- Null check for variables.
+    for name, variable in pairs(nut.char.vars) do
+        if (variable.notNull and not info[name]) then
+            return false, name.." was not provided"
+        end
+    end
+
+    -- Use the CharacterValidateInfo hook to check.
+    local valid, fault = hook.Run("CharacterValidateInfo", info, context)
+
+    if (valid == false) then
+        return false, fault
+    end
+    
+    return true
+end
+
+nut.util.include("nutscript2/gamemode/core/sh_char_vars.lua")

@@ -3,13 +3,18 @@ File:    shared.lua
 Purpose: Loads all of the NutScript framework components.
 --]]
 
-DeriveGamemode("sandbox")
+-- Create a table to store NutScript classes.
+nut.meta = nut.meta or {}
+
+-- Set NUT_BASE to another gamemode to have NutScript derive from it.
+DeriveGamemode(NUT_BASE or "sandbox")
 
 -- Include utility functions.
 include("util.lua")
 
 -- Include the framework files.
 nut.util.includeDir("thirdparty")
+nut.util.includeDir("classes")
 nut.util.includeDir("libraries")
 
 -- Set some gamemode information.
