@@ -59,7 +59,11 @@ nut.db.modules.mysqloo = {
             local query = nut.db.object:query(value)
 
             function query:onSuccess(data)
-                callback(data)
+                nut.db.lastID = self:lastInsert()
+
+                if (type(callback) == "function") then
+                    callback(data)
+                end
             end
 
             function query:onError(reason)
@@ -74,7 +78,10 @@ nut.db.modules.mysqloo = {
                     nut.db.modules.mysqloo.connect()
                 else
                     nut.db.lastError = reason
-                    callback()
+
+                    if (type(callback) == "function") then
+                        callback()
+                    end
                 end
             end
 
@@ -88,6 +95,9 @@ nut.db.modules.mysqloo = {
             return nut.db.object:escape(value)
         end
 
-        return sql.SQLStr(value)
+        return sql.SQLStr(value, true)
+    end,
+    getInsertID = function()
+        return nut.db.lastID
     end
 }

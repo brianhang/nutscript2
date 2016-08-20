@@ -4,9 +4,6 @@ Purpose: Provides an implementation for the NutScript database functions
          using SQLite.
 --]]
 
--- The last occuring SQL error.
-local lastError = ""
-
 nut.db.modules.tmysql4 = {
     connect = function(callback)
         if (not tmysql) then
@@ -39,7 +36,21 @@ nut.db.modules.tmysql4 = {
     end,
     query = function(value, callback)
         if (nut.db.object) then
-            nut.db.object:Query(value, callback)
+            nut.db.object:Query(value, function(results)
+                local result = results[1]
+                local data
+
+                if (result.status) then
+                    data = result.data
+                    nut.db.lastID = result.lastid
+                else
+                    nut.db.lastError = result.error
+                end
+
+                if (type(callback) == "function") then
+                    callback(data)
+                end
+            end)
         elseif (type(callback) == "function") then
             callback()
         end
@@ -49,6 +60,9 @@ nut.db.modules.tmysql4 = {
             return nut.db.object:Escape(value)
         end
 
-        return sql.SQLStr(value)
+        return sql.SQLStr(value, true)
+    end,
+    getInsertID = function()
+        return nut.db.lastID
     end
 }
