@@ -182,7 +182,7 @@ function nut.db.update(tableName, data, condition, callback, limit)
     assert(type(data) == "table", "data is not a table")
 
     -- Start generating the query.
-    local query = "UPDATE "..tostring(tableName).." SET "
+    local query = "UPDATE "..tostring(tableName)
 
     -- Convert the table into an update query.
     local updates = {}
