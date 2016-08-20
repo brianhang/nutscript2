@@ -33,6 +33,6 @@ nut.db.modules.sqlite = {
         return sql.SQLStr(value, true)
     end,
     getInsertID = function()
-        return tonumber(sql.QueryValue("SELECT last_insert_id()"))
+        return tonumber(sql.QueryValue("SELECT last_insert_rowid()"))
     end
 }
