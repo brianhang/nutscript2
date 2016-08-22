@@ -171,6 +171,8 @@ function nut.db.toString(value, noQuotes)
         end
 
         return output
+    elseif (valueType == "nil" or valueType == "no value") then
+        return "NULL"
     end
 
     -- Default to just converting the value to a string.
