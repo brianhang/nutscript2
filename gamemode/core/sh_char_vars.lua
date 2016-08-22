@@ -41,7 +41,12 @@ nut.char.registerVar("model", {
 
         if (IsValid(client)) then
             client:SetModel(value)
+            client:SetupHands()
         end
+    end,
+    onSetup = function(character, client)
+        client:SetModel(character:getModel())
+        client:SetupHands()
     end,
     replication = CHARVAR_PUBLIC,
     notNull = true
@@ -61,6 +66,9 @@ nut.char.registerVar("team", {
         if (IsValid(client)) then
             client:SetTeam(value)
         end
+    end,
+    onSetup = function(character, client)
+        client:SetModel(character:getModel())
     end,
     replication = CHARVAR_PUBLIC
 })
@@ -84,6 +92,11 @@ nut.char.registerVar("class", {
 
 nut.char.registerVar("data", {
     default = {},
+    onDelete = function(id)
+        assert(type(id) == "number", "ID must be a number")
+
+        nut.db.delete(CHAR_DATA, "id = "..id)
+    end,
     onLoad = function(character)
         local id = character:getID()
 
@@ -106,6 +119,9 @@ nut.char.registerVar("data", {
         end)
     end,
     onSet = function(character, key, value, recipient)
+        -- Store the old value for the hook.
+        local oldValue = character.vars.data[key]
+
         -- Set the data value.
         character.vars.data[key] = value
 
@@ -146,7 +162,7 @@ nut.char.registerVar("data", {
         end
 
         net.Start("nutCharData")
-        net.WriteUInt(character:getID(), 32)
+        net.WriteInt(character:getID(), 32)
         net.WriteString(key)
         net.WriteType(value)
 
@@ -158,6 +174,8 @@ nut.char.registerVar("data", {
         else
             net.Broadcast()
         end
+
+        hook.Run("CharacterDataChanged", character, key, oldValue, value)
 
         -- Don't do anything else after.
         return false
@@ -170,6 +188,9 @@ nut.char.registerVar("data", {
 nut.char.registerVar("var", {
     default = {},
     onSet = function(character, key, value, recipient)
+        -- Store the old value for the hook.
+        local oldValue = character.vars.var[key]
+
         -- Set the temporary variable.
         character.vars.var[key] = value
 
@@ -179,7 +200,7 @@ nut.char.registerVar("var", {
         end
 
         net.Start("nutCharTempVar")
-        net.WriteUInt(character:getID(), 32)
+        net.WriteInt(character:getID(), 32)
         net.WriteString(key)
         net.WriteType(value)
 
@@ -191,6 +212,8 @@ nut.char.registerVar("var", {
         else
             net.Broadcast()
         end
+
+        hook.Run("CharacterTempVarChanged", character, key, oldValue, value)
 
         -- Don't do anything else after.
         return false
@@ -222,6 +245,7 @@ nut.char.registerVar("owner", {
             character:kick()
         end
 
+        hook.Run("CharacterTransferred", character, oldOwner, steamID)
 
         -- Update the database immediately.
         steamID = nut.db.escape(steamID)
