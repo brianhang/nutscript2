@@ -1,5 +1,5 @@
 --[[
-File:    sh_server.lua
+File:    utilities/sh_server.lua
 Purpose: Provides some utility functions that relate to the server.
 --]]
 

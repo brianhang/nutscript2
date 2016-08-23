@@ -1,5 +1,5 @@
 --[[
-File:    cl_resolution.lua
+File:    utilities/cl_resolution.lua
 Purpose: Sets up a hook that is triggered when the screen resolution changes.
 --]]
 

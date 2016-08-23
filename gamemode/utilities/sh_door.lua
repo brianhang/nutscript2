@@ -1,5 +1,5 @@
 --[[
-Name:    sh_door.lua
+Name:    utilities/sh_door.lua
 Purpose: Creates utility functions that relates to doors.
 --]]
 

@@ -1,5 +1,5 @@
 --[[
-Name:    sh_entity.lua
+Name:    utilities/sh_entity.lua
 Purpose: Provides some utility functions that deal with entities.
 --]]
 

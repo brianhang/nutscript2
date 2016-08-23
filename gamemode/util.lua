@@ -55,4 +55,4 @@ function nut.util.includeDir(directory, state, relative)
 end
 
 -- Include the utility functions.
-nut.util.includeDir("util")
+nut.util.includeDir("utilities")

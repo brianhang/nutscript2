@@ -1,5 +1,5 @@
 --[[
-File:    sh_sound.lua
+File:    utilities/sh_sound.lua
 Purpose: Creates a utility function for playing queued sounds.
 --]]
 

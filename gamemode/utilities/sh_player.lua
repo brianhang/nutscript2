@@ -1,5 +1,5 @@
 --[[
-File:    sh_player.lua
+File:    utilities/sh_player.lua
 Purpose: Creates utility functions relating to players on the server.
 --]]
 

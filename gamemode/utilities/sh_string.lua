@@ -1,5 +1,5 @@
 --[[
-File:    sh_string.lua
+File:    utilities/sh_string.lua
 Purpose: Creates utility functions that deals with strings.
 --]]
 

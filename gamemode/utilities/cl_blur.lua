@@ -1,5 +1,5 @@
 --[[
-File:    cl_blur.lua
+File:    utilities/cl_blur.lua
 Purpose: Creates utility functions that are used to blur parts of the screen.
 --]]
 
