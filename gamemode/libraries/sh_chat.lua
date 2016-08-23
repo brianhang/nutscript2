@@ -119,8 +119,67 @@ function nut.chat.register(mode, info)
     -- Default the onCanSay to always return true.
     info.onCanSay = info.onCanSay or ALWAYS_TRUE
 
-    if (
+    -- Default the adding chat to the chatbox to using a format and color.
+    if (CLIENT and type(info.onChatAdd) ~= "function") then
+        info.color = info.color or color_white
+        info.format = info.format or "%s: %s"
+
+        -- Create a function to add the message to the chatbox.
+        info.onChatAdd = function(speaker, message, context)
+            local name = hook.Run("ChatGetName", speaker, message, context) or
+                         speaker:Name()        
+
+            chat.AddText(info.color, info.format:format(name, message))
+        end
+    end
+
+    -- Store the chat mode.
+    nut.chat.modes[mode] = info
 end
 
 -- Sends a chat message using a given mode.
-function nut.chat.send(speaker, 
+function nut.chat.send(speaker, message)
+    assert(type(speaker) == "Player", "speaker is not a player")
+    assert(IsValid(speaker), "speaker is not a valid player")
+    assert(type(message) == "string", "message is not a string")
+
+    -- Find the chat mode.
+    local mode, message, context = nut.chat.parse(speaker, message)
+
+    -- If one was not found, return false since the message will not
+    -- be sent.
+    if (not nut.chat.modes[mode]) then
+        return false
+    end
+
+    -- Allow for final adjustments to the message.
+    message = hook.Run("ChatMessageAdjust", speaker, mode, message)
+
+    -- Network the chat message.
+    local recipients = nut.chat.getRecipients(speaker, mode, message, context)
+
+    if (#recipients > 0) then
+        net.Start("nutChatMsg")
+            net.WriteEntity(speaker)
+            net.WriteString(mode)
+            net.WriteString(message)
+            net.WriteTable(context)
+        net.Send(recipients)
+    end
+end
+
+if (SERVER) then
+    util.AddNetworkString("nutChatMsg")
+else
+    net.Receive("nutChatMsg", function()
+        local speaker = net.ReadEntity()
+        local mode = net.ReadString()
+        local message = net.ReadString()
+        local context = net.ReadTable()
+        local info = nut.chat.modes[mode]
+
+        if (info) then
+            info.onChatAdd(speaker, message, context)
+        end
+    end)
+end
