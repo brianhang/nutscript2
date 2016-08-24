@@ -32,7 +32,7 @@ function nut.chat.getRecipients(speaker, mode, message, context)
 
     -- Find which players can hear the speaker.
     for _, listener in ipairs(player.GetAll()) do
-        if (mode.onCanHear(speaker, listener, message, context) or
+        if (info.onCanHear(speaker, listener, message, context) or
             hook.Run("IsChatRecipient", speaker, listener, mode,
             message, context)) then
             recipients[#recipients + 1] = listener
@@ -74,8 +74,6 @@ function nut.chat.parse(speaker, message)
         elseif (type(prefix) == "string" and message:sub(1, #prefix + offset)
                 == prefix..(noSpaceAfter and "" or " ")) then
                 mode = thisMode
-
-                break
         end
 
         -- Change the message to only contain the real chat message.
@@ -83,20 +81,20 @@ function nut.chat.parse(speaker, message)
             message = message:sub(#prefix + 1)
 
             -- Get rid of the space in front if needed.
-            if (not noSpaceAfter) then
+            if (noSpaceAfter and message:sub(1, 1):match("%s")) then
                 message = message:sub(MSG_START)
             end
         end
     end
 
     -- Default the chat mode to unknown.
-    mode = mode or "unknown"
+    mode = mode or ""
     
     -- Adjust the mode, context, and message.
-    mode = hook.Run("ChatAdjustMode", speaker, message, mode, context) or mode
+    mode = hook.Run("ChatAdjustMode", speaker, mode, message, context) or mode
     hook.Run("ChatAdjustContext", speaker, mode, message, context)
 
-    return mode, messasge, context
+    return mode, message, context
 end
 
 -- Sets up a chat mode for use in the future.
@@ -115,6 +113,9 @@ function nut.chat.register(mode, info)
     else
         info.onCanHear = ALWAYS_TRUE
     end
+
+    -- Default the prefix to the mode's identifier.
+    info.prefix = info.prefix or "/"..mode
 
     -- Default the onCanSay to always return true.
     info.onCanSay = info.onCanSay or ALWAYS_TRUE
@@ -153,7 +154,7 @@ function nut.chat.send(speaker, message)
     end
 
     -- Allow for final adjustments to the message.
-    message = hook.Run("ChatMessageAdjust", speaker, mode, message)
+    message = hook.Run("ChatMessageAdjust", speaker, mode, message) or message
 
     -- Network the chat message.
     local recipients = nut.chat.getRecipients(speaker, mode, message, context)
@@ -166,6 +167,8 @@ function nut.chat.send(speaker, message)
             net.WriteTable(context)
         net.Send(recipients)
     end
+
+    return true
 end
 
 if (SERVER) then
@@ -180,6 +183,10 @@ else
 
         if (info) then
             info.onChatAdd(speaker, message, context)
+
+            if (hook.Run("ShouldChatTick") ~= false) then
+                chat.PlaySound()
+            end
         end
     end)
 end

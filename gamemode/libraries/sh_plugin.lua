@@ -4,20 +4,20 @@ Purpose: Creates the plugin library which allows easier modification to
          the framework and gamemodes with drag and drop plugins.
 --]]
 
+-- Cache the plugin hooks.
+HOOK_CACHE = {}
+
 -- Where the file extension starts in a path.
 local EXT_START = -4
 
 nut.plugin = nut.plugin or {}
-nut.plugins = {}
+nut.plugins = nut.plugins or {}
 
 -- A list of plugins that have been disabled.
 nut.plugin.disabled = nut.plugin.disabled or {}
 
 -- A list of things that are loaded with plugins.
 nut.plugin.components = {}
-
--- A list of code that will run on clients once they initialize.
-nut.plugin.clientLua = {}
 
 -- Adds a plugin component which allows for extra features to be loaded in.
 function nut.plugin.addComponent(name, info)
@@ -62,17 +62,11 @@ function nut.plugin.load(id, path, name)
     end
 
     -- Create a table to store plugin information.
-    local plugin = {id = id, path = path}
+    local plugin = nut.plugins[id] or {id = id, path = path}
     local usingFile
 
     -- Make this table globally accessible.
     _G[name:upper()] = plugin
-
-    -- Warn if this plugin is overriding another plugin.
-    if (nut.plugins[id] and nut.plugins[id].path ~= path) then
-        ErrorNoHalt("[WARNING] Plugin '"..id.."' is being overridden by "..
-                    "another plugin with the same name.\n")
-    end
 
     -- Check if we are including a single file or a folder.
     if (path:sub(EXT_START) == ".lua") then
@@ -98,6 +92,8 @@ function nut.plugin.load(id, path, name)
             end
         end
     end
+
+    _G[name:upper()] = nil
 
     return true
 end
@@ -127,6 +123,14 @@ function nut.plugin.register(plugin)
         plugin:onRegister()
     end
 
+    -- Add the plugin hooks to the list of plugin hooks.
+    for name, callback in pairs(plugin) do
+        if (type(callback) == "function") then
+            HOOK_CACHE[name] = HOOK_CACHE[name] or {}
+            HOOK_CACHE[name][plugin] = callback
+        end
+    end
+
     hook.Run("PluginRegistered", plugin)
 
     -- Add the plugin to the list of plugins.
@@ -139,3 +143,30 @@ nut.plugin.addComponent("plugins", {
         includePluginDir(path)
     end
 })
+
+-- Overwrite hook.Call so plugin hooks run.
+hook.NutCall = hook.NutCall or hook.Call
+
+function hook.Call(name, gm, ...)
+    local hooks = HOOK_CACHE[name]
+
+    -- Run the plugin hooks from the cache.
+    if (hooks) then
+        -- Possible return values, assuming there are no more than
+        -- six return values.
+        local a, b, c, d, e, f
+
+        -- Run all the plugin hooks.
+        for plugin, callback in pairs(hooks) do
+            a, b, c, d, e, f = callback(plugin, ...)
+
+            -- If a hook returned value(s), return it.
+            if (a ~= nil) then
+                return a, b, c, d, e, f
+            end
+        end
+    end
+
+    -- Otherwise, do the normal hook calls.
+    return hook.NutCall(name, gm, ...)
+end
