@@ -7,7 +7,9 @@ Purpose: Loads all of the NutScript framework components.
 nut.meta = nut.meta or {}
 
 -- Set NUT_BASE to another gamemode to have NutScript derive from it.
-DeriveGamemode(NUT_BASE or "sandbox")
+if (type(NUT_BASE) == "string") then
+    DeriveGamemode(NUT_BASE)
+end
 
 -- Include utility functions.
 include("util.lua")
