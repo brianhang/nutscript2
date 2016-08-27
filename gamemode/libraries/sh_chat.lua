@@ -24,7 +24,7 @@ function nut.chat.getRecipients(speaker, mode, message, context)
     local info = nut.chat.modes[mode]
 
     -- A list of players that can hear the speaker.
-    local recipients = {speaker}
+    local recipients = {}
 
     if (not info) then
         return recipients
@@ -104,8 +104,8 @@ function nut.chat.register(mode, info)
 
     -- Convert the canHear function into one that returns whether or not
     -- a player can be heard as a boolean.
-    if (type(info.onCanHear) == "number") then
-        local range = info.onCanHear
+    if (type(info.onCanHear) == "number" or type(info.range) == "number") then
+        local range = info.onCanHear or info.range
 
         info.onCanHear = function(speaker, listener)
             return speaker:GetPos():Distance(listener:GetPos()) <= range
