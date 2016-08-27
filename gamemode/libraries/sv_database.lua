@@ -59,12 +59,12 @@ function nut.db.delete(tableName, condition, callback, limit)
 
     -- Add a condition if one was given.
     if (condition) then
-        query = " WHERE "..tostring(condition)
+        query = query.." WHERE "..tostring(condition)
     end
 
     -- Add a limit if one was given.
     if (limit) then
-        query = " LIMIT "..tostring(limit)
+        query = query.." LIMIT "..tostring(limit)
     end
 
     nut.db.query(query, callback)

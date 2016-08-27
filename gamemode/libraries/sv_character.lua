@@ -36,9 +36,10 @@ function nut.char.create(info, callback, context)
     -- Allow modifications to the given info.
     hook.Run("CharacterAdjustInfo", info, context)
 
-    -- Make sure there are no extraneous variables.
+    -- Make sure there are no extraneous variables, but allow for
+    -- steamID to be set.
     for k, v in pairs(info) do
-        if (not nut.char.vars[k]) then
+        if (k ~= "steamID" and not nut.char.vars[k]) then
             return false, "invalid variable ("..k..")"
         end
     end
@@ -195,12 +196,12 @@ CREATE TABLE IF NOT EXISTS `%s` (
     `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(70) NOT NULL,
     `desc` TEXT,
-    `model` VARCHAR(160) NOT NULL,
+    `model` VARCHAR(160),
     `createTime` INT(11) UNSIGNED NOT NULL,
     `lastJoin` INT(11) UNSIGNED NOT NULL DEFAULT 0,
     `money` INT(11) UNSIGNED NOT NULL DEFAULT 0,
     `team` TINYINT(4) UNSIGNED,
-    `steamID` BIGINT(20) UNSIGNED NOT NULL,
+    `steamID` BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)
 ) AUTO_INCREMENT=1;
 ]]

@@ -34,15 +34,24 @@ function CHARACTER:__eq(other)
     return self.id == other.id
 end
 
+-- Deallocates a character.
+function CHARACTER:destroy()
+    nut.char.delete(self:getID(), nil, true)
+end
+
 -- Gets the numeric ID for the character.
 function CHARACTER:getID()
     return self.id
 end
 
+-- Micro-optimizations for getPlayer.
+local isValid = IsValid
+
 -- Gets the player that is the owner of the character.
 function CHARACTER:getPlayer()
-    self.player = IsValid(self.player) and self.player or
-                  findPlayerByCharID(self.id)
+    self.player = isValid(self.player) and
+                  self.player.getChar(self.player) == self and
+                  self.player or findPlayerByCharID(self.id)
 
     return self.player
 end

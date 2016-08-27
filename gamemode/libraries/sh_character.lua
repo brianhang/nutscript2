@@ -82,15 +82,15 @@ if (CLIENT) then
 end
 
 -- Deletes a character from existence.
-function nut.char.delete(id, callback)
+function nut.char.delete(id, callback, temporary)
     assert(type(id) == "number", "id is not a number")
 
     -- Remove the character object.
     nut.char.list[id] = nil
 
     if (SERVER) then
-        -- Remove the character entry in the database.
-        nut.db.delete(CHARACTERS, "id = "..id, function(success)
+        -- Called after the character has been deleted.
+        function deleted(success)
             if (type(callback) == "function") then
                 callback(success)
             end
@@ -101,7 +101,15 @@ function nut.char.delete(id, callback)
             net.Start("nutCharDelete")
                 net.WriteInt(id, LONG)
             net.Broadcast()
-        end)
+        end
+
+        -- If temporary, skip to the deleted callback.
+        if (temporary) then
+            return deleted(true)
+        end
+
+        -- Remove the character entry in the database.
+        nut.db.delete(CHARACTERS, "id = "..id, deleted)
 
         -- Delete associated character data.
         for name, variable in pairs(nut.char.vars) do
