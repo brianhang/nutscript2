@@ -158,7 +158,7 @@ function nut.char.registerVar(name, info)
     end
 
     -- Create the setter function.
-    if (not info.isConstant) then
+    if (SERVER and not info.isConstant) then
         -- Whether or not info.set is a function.
         local customSet = type(info.onSet) == "function"
 
