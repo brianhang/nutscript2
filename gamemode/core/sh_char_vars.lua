@@ -48,8 +48,7 @@ nut.char.registerVar("model", {
         client:SetModel(character:getModel())
         client:SetupHands()
     end,
-    replication = CHARVAR_PUBLIC,
-    notNull = true
+    replication = CHARVAR_PUBLIC
 })
 
 nut.char.registerVar("money", {
