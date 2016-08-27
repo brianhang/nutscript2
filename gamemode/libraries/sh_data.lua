@@ -36,6 +36,9 @@ function nut.data.set(key, value, ignoreMap, global)
         path = path..map.."/"
     end
 
+    -- Store the old value for the DataSet hook.
+    local oldValue = store[key]
+
     -- Set the data value.
     store[key] = value
 
@@ -50,6 +53,8 @@ function nut.data.set(key, value, ignoreMap, global)
 
         file.Write(path, encoded)
     end
+
+    hook.Run("DataSet", key, oldValue, value, ignoreMap, global)
 end
 
 -- Reads a NutScript data value.
