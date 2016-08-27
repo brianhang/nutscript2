@@ -20,6 +20,10 @@ nut.db.modules.mysqloo = {
             require("mysqloo")
         end
 
+        if (nut.db.object) then
+            return
+        end
+
         local object = mysqloo.connect(nut.db.hostname, nut.db.username,
                                        nut.db.password, nut.db.database,
                                        nut.db.port)
@@ -102,5 +106,6 @@ nut.db.modules.mysqloo = {
     end,
     getInsertID = function()
         return nut.db.lastID
-    end
+    end,
+    needsDetails = true
 }

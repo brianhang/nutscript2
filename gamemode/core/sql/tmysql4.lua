@@ -10,6 +10,10 @@ nut.db.modules.tmysql4 = {
             require("tmysql4")
         end
 
+        if (nut.db.object) then
+            return
+        end
+
         -- Create a connection.
         local object, reason = tmysql.Connect(nut.db.hostname,
                                               nut.db.username,
@@ -67,5 +71,6 @@ nut.db.modules.tmysql4 = {
     end,
     getInsertID = function()
         return nut.db.lastID
-    end
+    end,
+    needsDetails = true
 }

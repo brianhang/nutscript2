@@ -90,7 +90,7 @@ function nut.db.insert(tableName, data, callback)
     local values = {}
 
     for k, v in pairs(data) do
-        columns[#columns + 1] = tostring(k)
+        columns[#columns + 1] = "`"..tostring(k).."`"
         values[#values + 1] = nut.db.toString(v)
     end
     
@@ -119,6 +119,11 @@ function nut.db.select(tableName, fields, condition, callback, limit, order)
         -- Do nothing if no fields are desired.
         if (#fields == 0) then
             return
+        end
+
+        -- Add backticks around the fields.
+        for i = 1, #fields do
+            fields[i] = "`"..fields[i].."`"
         end
 
         fields = table.concat(fields, ",")
@@ -190,7 +195,7 @@ function nut.db.update(tableName, data, condition, callback, limit)
     local updates = {}
 
     for k, v in pairs(data) do
-        updates[#updates + 1] = tostring(k).."="..nut.db.toString(v)
+        updates[#updates + 1] = "`"..tostring(k).."`="..nut.db.toString(v)
     end
 
     -- Don't do anything if data is empty.

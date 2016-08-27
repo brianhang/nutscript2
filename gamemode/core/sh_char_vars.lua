@@ -142,14 +142,14 @@ nut.char.registerVar("data", {
             local encoded = result:sub(TABLE_START, TABLE_END)
             
             -- Create a query to update the data.
-            query = "REPLACE INTO "..CHAR_DATA.." (id, key, value) "..
+            query = "REPLACE INTO "..CHAR_DATA.." (`id`, `key`, `value`) "..
                     "VALUES (%s, '%s', '%s')"
             query = query:format(character:getID(),
                                  nut.db.escape(tostring(key)),
                                  nut.db.escape(encoded))
         else
             -- Delete if nil since storing it is not needed.
-            query = "DELETE FROM "..CHAR_DATA.." WHERE id=%s AND key='%s'"
+            query = "DELETE FROM "..CHAR_DATA.." WHERE `id`=%s AND `key`='%s'"
             query = query:format(character:getID(),
                                  nut.db.escape(tostring(key)))
         end

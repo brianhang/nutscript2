@@ -88,7 +88,7 @@ function nut.char.insert(info, callback)
     end
 
     -- Add some creation information.
-    data.steamID = info.steamID or ""
+    data.steamID = info.steamID or "0"
     data.createTime = os.time()
     data.lastJoin = data.createTime
 
@@ -192,25 +192,25 @@ end
 -- The queries needed to create tables for NutScript characters.
 local MYSQL_CHARACTER = [[
 CREATE TABLE IF NOT EXISTS `%s` (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    name VARCHAR NOT NULL,
-    desc TEXT,
-    model VARCHAR NOT NULL,
-    createTime INT UNSIGNED NOT NULL,
-    lastJoin INT UNSIGNED NOT NULL DEFAULT 0,
-    money INT UNSIGNED NOT NULL DEFAULT 0,
-    team TINYINT UNSIGNED,
-    steamID BIGINT UNSIGNED NOT NULL,
-    PRIMARY KEY (id)
+    `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(70) NOT NULL,
+    `desc` TEXT,
+    `model` VARCHAR(160) NOT NULL,
+    `createTime` INT(11) UNSIGNED NOT NULL,
+    `lastJoin` INT(11) UNSIGNED NOT NULL DEFAULT 0,
+    `money` INT(11) UNSIGNED NOT NULL DEFAULT 0,
+    `team` TINYINT(4) UNSIGNED,
+    `steamID` BIGINT(20) UNSIGNED NOT NULL,
+    PRIMARY KEY (`id`)
 ) AUTO_INCREMENT=1;
 ]]
 
 local MYSQL_CHAR_DATA = [[
 CREATE TABLE IF NOT EXISTS `%s` (
-    id INT UNSIGNED NOT NULL,
-    key VARCHAR NOT NULL,
-    value VARCHAR NOT NULL,
-    PRIMARY KEY (id, key)
+    `id` INT UNSIGNED NOT NULL,
+    `key` VARCHAR(65) NOT NULL,
+    `value` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`id`, `key`)
 );
 ]]
 
@@ -238,7 +238,7 @@ CREATE TABLE IF NOT EXISTS `%s` (
 ]]
 
 -- Sets up the character table 
-hook.Add("Initialize", "nutCharTableSetup", function()
+hook.Add("DatabaseConnected", "nutCharTableSetup", function()
     -- Set global variables for the character tables.
     CHARACTERS = engine.ActiveGamemode():lower().."_characters"
     CHAR_DATA = engine.ActiveGamemode():lower().."_chardata"
@@ -250,5 +250,6 @@ hook.Add("Initialize", "nutCharTableSetup", function()
     else
         nut.db.query(MYSQL_CHARACTER:format(CHARACTERS))
         nut.db.query(MYSQL_CHAR_DATA:format(CHAR_DATA))
+        print("Done")
     end
 end)
