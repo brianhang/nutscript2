@@ -9,4 +9,3 @@ nut = nut or {}
 -- Include shared.lua to load all the framework files then setup.lua to set up
 -- the gamemode for use.
 include("shared.lua")
-include("setup.lua")

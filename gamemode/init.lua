@@ -11,7 +11,5 @@ nut = nut or {}
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("util.lua")
 AddCSLuaFile("shared.lua")
-AddCSLuaFile("setup.lua")
 
 include("shared.lua")
-include("setup.lua")
