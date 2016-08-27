@@ -5,12 +5,12 @@ Purpose: Creates a system for storing information about the gamemode's main
 --]]
 
 -- The money entity to use.
-local MONEY_ENT = "nut_money"
 
 nut.currency = {}
 nut.currency.plural = "dollars"
 nut.currency.singular = "dollar"
 nut.currency.symbol = "$"
+nut.currency.entity = "nut_money"
 
 -- Sets the currency for the gamemode.
 function nut.currency.set(symbol, singular, plural)
@@ -46,14 +46,20 @@ end
 
 if (SERVER) then
     -- Spawns a money entity containing the given amount.
-    function nut.currency.spawn(position, amount)
+    function nut.currency.spawn(position, amount, setAmountFuncName)
         assert(type(position) == "Vector", "position is not a vector")
         assert(type(amount) == "number", "amount is not a number")
 
-        local entity = ents.Create(NUT_MONEY)
+        if (type(setAmountFuncName) ~= "string") then
+        	setAmountFuncName = "SetAmount"
+        end
+
+        local entity = ents.Create(nut.currency.entity)
         entity:SetPos(position)
         entity:Spawn()
-        entity:SetAmount(amount)
+        entity[setAmountFuncName](entity, amount)
+
+        hook.Run("MoneySpawned", entity)
 
         return entity        
     end
