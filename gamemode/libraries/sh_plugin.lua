@@ -17,7 +17,7 @@ nut.plugins = nut.plugins or {}
 nut.plugin.disabled = nut.plugin.disabled or {}
 
 -- A list of things that are loaded with plugins.
-nut.plugin.components = {}
+nut.plugin.components = nut.plugin.components or {}
 
 -- Adds a plugin component which allows for extra features to be loaded in.
 function nut.plugin.addComponent(name, info)
@@ -170,3 +170,5 @@ function hook.Call(name, gm, ...)
     -- Otherwise, do the normal hook calls.
     return hook.NutCall(name, gm, ...)
 end
+
+nut.util.include("nutscript2/gamemode/core/sh_components.lua")

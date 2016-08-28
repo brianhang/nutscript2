@@ -12,7 +12,7 @@ nut.util = nut.util or {}
 
 -- Includes a file with handling of state using the file's name.
 function nut.util.include(path, state)
-    if (state == "server" or path:find("sv_") and SERVER) then
+    if ((state == "server" or path:find("sv_")) and SERVER) then
         return include(path)
     elseif (state == "client" or path:find("cl_")) then
         if (SERVER) then
