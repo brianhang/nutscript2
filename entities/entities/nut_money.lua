@@ -11,6 +11,9 @@ function ENT:SetupDataTables()
 end
 
 if (SERVER) then
+    -- The default size of the money entity in Source units.
+    local SIZE = 8
+
     -- Called to set up the entity.
     function ENT:Initialize()
         -- Set the model.
