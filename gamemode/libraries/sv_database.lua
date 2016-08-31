@@ -48,8 +48,12 @@ function nut.db.connect(sqlModule, callback)
     nut.db.getInsertID = sqlModule.getInsertID
     nut.db.sqlModule = sqlModule
 
-    -- Connect to the database if applicable.
-    sqlModule.connect(callback)
+    -- Defer the connection until plugins have loaded.
+    if (nut.loading) then
+        nut.db.connectCallback = callback
+    else
+        sqlModule.connect(callback)
+    end
 end
 
 -- Deletes rows within the database under given conditions.
@@ -219,5 +223,12 @@ function nut.db.update(tableName, data, condition, callback, limit)
     nut.db.query(query, callback)
 end
 
--- Default to SQLite.
 nut.db.connect(nut.db.modules.sqlite)
+
+-- Actually connect once everything is done loading.
+hook.Add("PluginInitialized", "nutDatabaseConnect", function()
+    -- Connect to the database if applicable.
+    if (nut.db.sqlModule) then
+        nut.db.sqlModule.connect(nut.db.connectCallback)
+    end
+end)

@@ -5,21 +5,22 @@ Purpose: Defines the inventory class which is a container for items.
 
 local INVENTORY = nut.meta.inventory or {}
 INVENTORY.__index = INVENTORY
+INVENTORY.owner = 0
 INVENTORY.id = 0
 
 -- Returns the string representation of the inventory.
 function INVENTORY:__tostring()
-    return "inventory["..self.id.."]"
+    return "inventory"
 end
 
--- Returns whether or not two inventories are the same.
-function INVENTORY:__eq(other)
-    return self.id == other.id
-end
-
--- Gets the numeric ID for the inventory.
+-- Returns the unique, numeric ID for the inventory.
 function INVENTORY:getID()
     return self.id
+end
+
+-- Returns the owning character's ID.
+function INVENTORY:getOwner()
+    return self.owner
 end
 
 -- Adds an item to the inventory.
@@ -37,19 +38,8 @@ function INVENTORY:remove()
     error("INVENTORY:remove() has not been overwritten!")
 end
 
--- Returns the owning character's ID.
-function INVENTORY:getOwner()
-    error("INVENTORY:getOwner() has not been overwritten!")
-end
-
--- Removes an item from the inventory.
-function INVENTORY:remove()
-    error("INVENTORY:remove() has not been overwritten!")
-end
-
--- Sets the owner of the inventory.
-function INVENTORY:setOwner()
-    error("INVENTORY:setOwner() has not been overwritten!")
+-- Saves all the items in the inventory.
+function INVENTORY:save()
 end
 
 -- Synchronizes the items within the inventory.

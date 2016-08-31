@@ -10,6 +10,7 @@ local EXTENSION = -5
 nut.item = nut.item or {}
 nut.item.list = nut.item.list or {}
 nut.item.abstract = nut.item.abstract or {}
+nut.item.inventories = nut.item.inventories or {}
 
 -- Loads an item from a given file.
 function nut.item.load(path, parentItem, isAbstract)
@@ -106,15 +107,145 @@ function nut.item.register(item)
     hook.Run("ItemRegistered", item)
 end
 
--- Add some functions to the inventory class.
-local INVENTORY = nut.meta.inventory
+-- Instances a new inventory object.
+function nut.item.newInv(id, owner)
+    -- Provide default values for the id and owner.
+    if (type(id) ~= "number") then
+        id = 0
+    end
 
--- Adds an item to the inventory.
-function INVENTORY:add()
-    error("INVENTORY:add() has not been overwritten!")
+    if (type(owner) ~= "number") then
+        owner = 0
+    end
+
+    -- Create a new inventory metatable.
+    local inventory = setmetatable({id = id, owner = owner}, nut.meta.inventory)
+    nut.item.inventories[id] = inventory
+
+    -- Adjust the instance if needed.
+    hook.Run("InventoryInstanced", inventory)
+
+    return inventory
 end
 
--- Removes an item to the inventory.
-function INVENTORY:remove()
-    error("INVENTORY:remove() has not been overwritten!")
+-- Serverside portion for inventories.
+if (CLIENT) then return end
+
+-- Creates a new inventory that is stored in the database.
+function nut.item.createInv(owner, callback)
+    assert(type(owner) == "number", "owner is not a number")
+
+    -- Insert the inventory into the database.
+    nut.db.insert(INVENTORIES, {ownerID = owner}, function(results)
+        if (results) then
+            -- Get the unique ID for the inventory.
+            local id = nut.db.getInsertID()
+
+            -- Create an inventory object.
+            local inventory = nut.item.newInv(id, owner)
+            hook.Run("InventoryCreated", inventory)
+
+            -- Run the callback with the inventory.
+            if (type(callback) == "function") then
+                callback(inventory)
+            end
+        end
+    end)
 end
+
+-- Loads an inventory from the database into an object.
+function nut.item.restoreInv(id, callback)
+    assert(type(id) == "number", "id is not a number")
+    assert(id >= 0, "id can not be negative")
+
+    -- Select the inventory corresponding to the given ID
+    -- from the database.
+    nut.db.select(INVENTORIES, {"ownerID"}, "invID = "..id, function(results)
+        if (results and results[1]) then
+            results = results[1]
+
+            -- Create an inventory object using the results.
+            local inventory = nut.item.newInv(id,
+                                              tonumber(results.ownerID) or 0)
+
+            -- Store the inventory.
+            nut.item.inventories[inventory.id] = inventory
+
+            hook.Run("InventoryRestored", inventory)
+
+            -- Load the inventory's items.
+            inventory:load(function()
+                hook.Run("InventoryLoaded", inventory)
+
+                -- Run the callback passing the inventory.
+                if (type(callback) == "function") then
+                    callback(inventory)
+                end
+            end)
+        elseif (type(callback) == "function") then
+            callback()
+        end
+    end)
+end
+
+-- Loads inventories which belongs to a given owner.
+function nut.item.restoreInvFromOwner(owner, callback, limit)
+    assert(type(owner) == "number", "owner must be a number")
+    assert(owner >= 0, "owner can not be negative")
+
+    -- Select the inventories that belong to the given owner.
+    nut.db.select(INVENTORIES, {"invID"}, "ownerID = "..owner,
+    function(results)
+        if (results and #results > 0) then
+            -- Convert each result into an inventory object.
+            for index, result in ipairs(results) do
+                -- Create an inventory object using the results.
+                local inventory = nut.item.newInv(tonumber(result.invID) or 0,
+                                                  owner)
+
+                -- Store the inventory.
+                nut.item.inventories[inventory.id] = inventory
+
+                hook.Run("InventoryRestored", inventory, index)
+
+                -- Load the inventory's items.
+                inventory:load(function()
+                    hook.Run("InventoryLoaded", inventory, index)
+                    
+                    -- Run the callback with the loaded inventory.
+                    if (type(callback) == "function") then
+                        callback(inventory, index)
+                    end
+                end)
+            end
+        elseif (type(callback) == "function") then
+            callback()
+        end
+    end, limit, "invID")
+end
+
+hook.Add("DatabaseConnected", "nutInventoryTable", function()
+    local MYSQL_CREATE = [[
+    CREATE TABLE IF NOT EXISTS `%s` (
+        `invID` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        `ownerID` INT(11) UNSIGNED NOT NULL
+    ) AUTO_INCREMENT=1;
+    ]]
+
+    local SQLITE_CREATE = [[
+    CREATE TABLE IF NOT EXISTS `%s` (
+        `invID` INTEGER PRIMARY KEY NOT NULL,
+        `ownerID` INTEGER NOT NULL
+    );
+    ]]
+
+    -- The table name for the inventories.
+    INVENTORIES = engine.ActiveGamemode():lower().."_inventories"
+
+    -- Create the inventories table.
+    if (nut.db.sqlModule == nut.db.modules.sqlite) then
+        nut.db.query(SQLITE_CREATE:format(INVENTORIES))
+    else
+        nut.db.query(MYSQL_CREATE:format(INVENTORIES))
+    end
+end)
