@@ -21,66 +21,6 @@ nut.char = nut.char or {}
 nut.char.list = nut.char.list or {}
 nut.char.vars = {}
 
-if (CLIENT) then
-    -- Removes a character on the client.
-    net.Receive("nutCharDelete", function()
-        -- Get the character that is being removed.
-        local id = net.ReadInt(32)
-
-        -- Remove the character.
-        nut.char.delete(id)
-        hook.Run("CharacterDeleted", id)
-    end)
-
-    -- Sets a character variable.
-    net.Receive("nutCharVar", function()
-        -- Read the information.
-        local id = net.ReadInt(32)
-        local key = net.ReadString()
-        local value = net.ReadType()
-
-        -- Get the character from the ID.
-        local character = nut.char.list[id] or nut.char.new(id)
-        local oldValue = character.vars[key]
-
-        -- Update the variable.
-        character.vars[key] = value
-        hook.Run("CharacterVarChanged", character, key, oldValue, value)
-    end)
-
-    -- Sets a character data value.
-    net.Receive("nutCharData", function()
-        -- Read the information.
-        local id = net.ReadInt(32)
-        local key = net.ReadString()
-        local value = net.ReadType()
-
-        -- Get the character from the ID.
-        local character = nut.char.list[id] or nut.char.new(id)
-        local oldValue = character.vars.data[key]
-
-        -- Update the data value.
-        character.vars.data[key] = value
-        hook.Run("CharacterDataChanged", character, key, oldValue, value)
-    end)
-
-    -- Sets a character temporary variable.
-    net.Receive("nutCharTempVar", function()
-        -- Read the information.
-        local id = net.ReadInt(32)
-        local key = net.ReadString()
-        local value = net.ReadType()
-
-        -- Get the character from the ID.
-        local character = nut.char.list[id] or nut.char.new(id)
-        local oldValue = character.vars.var[key]
-
-        -- Update the data value.
-        character.vars.var[key] = value
-        hook.Run("CharacterTempVarChanged", character, key, oldValue, value)
-    end)
-end
-
 -- Deletes a character from existence.
 function nut.char.delete(id, callback, temporary)
     assert(type(id) == "number", "id is not a number")
@@ -96,6 +36,13 @@ function nut.char.delete(id, callback, temporary)
             end
 
             hook.Run("CharacterDeleted", id)
+
+            -- Destroy associated data.
+            for name, variable in pairs(nut.char.vars) do
+                if (type(variable.onDestroy) == "function") then
+                    variable.onDestroy(id)
+                end
+            end
 
             -- Notify the clients to remove the character.
             net.Start("nutCharDelete")
@@ -130,8 +77,13 @@ function nut.char.new(id)
     -- Note vars is deep copied so there are no side effects.
     local character = setmetatable({
         id = id,
-        vars = table.Copy(nut.meta.character.vars)
+        vars = {}
     }, nut.meta.character)
+
+    -- Set the variables to their default values.
+    for name, variable in pairs(nut.char.vars) do
+        character.vars[name] = variable.onGetDefault()
+    end
 
     -- Store the character for later use.
     nut.char.list[id] = character
@@ -153,8 +105,11 @@ function nut.char.registerVar(name, info)
     -- Get a CamelCase version of name.
     local upperName = name:sub(1, 1):upper()..name:sub(SECOND)
 
+    -- Create a function to get the default value.
+    info.onGetDefault = info.onGetDefault or function() return info.default end
+
     -- Store the default in the metatable.
-    character.vars[name] = info.default
+    character.vars[name] = info.onGetDefault()
 
     -- Create a getter function.
     if (type(info.onGet) == "function") then
@@ -264,11 +219,40 @@ function nut.char.validateInfo(info, context)
 end
 
 -- Set up character variables.
-nut.util.include("nutscript2/gamemode/core/sh_char_vars.lua")
+nut.util.includeDir("core/charvars")
 
 -- Create a function to get characters from players.
 local PLAYER = FindMetaTable("Player")
 
 function PLAYER:getChar()
     return nut.char.list[self:GetDTInt(CHAR_ID)]
+end
+
+-- Handle networking of character variables.
+if (CLIENT) then
+    -- Removes a character on the client.
+    net.Receive("nutCharDelete", function()
+        -- Get the character that is being removed.
+        local id = net.ReadInt(LONG)
+
+        -- Remove the character.
+        nut.char.delete(id)
+        hook.Run("CharacterDeleted", id)
+    end)
+
+    -- Sets a character variable.
+    net.Receive("nutCharVar", function()
+        -- Read the information.
+        local id = net.ReadInt(LONG)
+        local key = net.ReadString()
+        local value = net.ReadType()
+
+        -- Get the character from the ID.
+        local character = nut.char.list[id] or nut.char.new(id)
+        local oldValue = character.vars[key]
+
+        -- Update the variable.
+        character.vars[key] = value
+        hook.Run("CharacterVarChanged", character, key, oldValue, value)
+    end)
 end

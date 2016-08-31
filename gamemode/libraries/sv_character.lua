@@ -78,7 +78,7 @@ function nut.char.insert(info, callback)
     -- Get the data to insert into the database.
     for name, variable in pairs(nut.char.vars) do
         if (variable.field and not variable.isConstant) then
-            local value = info[name] or variable.default
+            local value = info[name] or variable.onGetDefault()
 
             if (variable.notNull and value == nil) then
                 error(name.." can not be null")
@@ -149,11 +149,14 @@ function nut.char.load(id, callback, reload)
 
                     continue
                 end
+
+                -- Get the default value of the variable.
+                local default = variable.onGetDefault()
                 
                 -- Convert the string value to the correct Lua type.
-                if (variable.default and field and value) then
+                if (default and field and value) then
                     -- Get the suggested type.
-                    local defaultType = type(variable.default)
+                    local defaultType = type(default)
 
                     -- Convert to the suggested type if applicable.
                     if (ENCODE_TYPES[defaultType]) then
@@ -251,6 +254,5 @@ hook.Add("DatabaseConnected", "nutCharTableSetup", function()
     else
         nut.db.query(MYSQL_CHARACTER:format(CHARACTERS))
         nut.db.query(MYSQL_CHAR_DATA:format(CHAR_DATA))
-        print("Done")
     end
 end)
