@@ -197,7 +197,7 @@ if (SERVER) then
 
             -- Allow for custom synchronization.
             if (type(variable.onSync) == "function" and
-                variable.onSync(recipient, character) == false) then
+                variable.onSync(self, recipient) == false) then
                 continue
             end
             
