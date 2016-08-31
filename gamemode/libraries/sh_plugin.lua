@@ -46,6 +46,15 @@ function nut.plugin.initialize()
     includePluginDir(engine.ActiveGamemode())
     includePluginDir("ns_plugins")
 
+    -- Load components for the gamemode.
+    nut.plugin.loadComponents(GAMEMODE, engine.ActiveGamemode().."/gamemode")
+
+    for name, component in pairs(nut.plugin.components) do
+        if (type(component.onLoaded) == "function") then
+            component.onLoaded(GAMEMODE)
+        end
+    end
+
     hook.Run("PluginInitialized")
 end
 
@@ -99,14 +108,14 @@ function nut.plugin.load(id, path, name)
 end
 
 -- Loads components of a plugin from a given path.
-function nut.plugin.loadComponents(plugin)
+function nut.plugin.loadComponents(plugin, path)
     assert(type(plugin) == "table", "plugin is not a table")
 
     -- Include any plugin components.
     for name, component in pairs(nut.plugin.components) do
         if (type(component.onInclude) == "function" and
             hook.Run("PluginComponentShouldLoad", plugin, name) ~= false) then
-            component.onInclude(plugin, plugin.path)
+            component.onInclude(plugin, path or plugin.path)
         end
     end
 
