@@ -50,10 +50,10 @@ end
 -- Loads classes and teams from a given directory.
 function nut.team.loadFromDir(base)
     for _, path in ipairs(file.Find(base.."/teams/*.lua", "LUA")) do
-        nut.team.load(base.."/"..path)
+        nut.team.load(base.."/teams/"..path)
     end
 
     for _, path in ipairs(file.Find(base.."/classes/*.lua", "LUA")) do
-        nut.team.loadClass(base.."/"..path)
+        nut.team.loadClass(base.."/classes/"..path)
     end
 end
