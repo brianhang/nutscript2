@@ -14,7 +14,7 @@ nut.currency.entity = "nut_money"
 
 -- Sets the currency for the gamemode.
 function nut.currency.set(symbol, singular, plural)
-    assert(type(symbol) ~= "string" and type(singular) ~= "string",
+    assert(type(symbol) == "string" or type(singular) == "string",
            "either symbol or singular needs to be given")
 
     nut.currency.symbol = symbol or ""
