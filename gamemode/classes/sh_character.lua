@@ -95,10 +95,16 @@ if (SERVER) then
         local client = self:getPlayer()
         
         if (IsValid(client) and client:getChar() == self) then
+            -- Set the player's active character to none.
             client:SetDTInt(CHAR_ID, 0)
-        end
 
-        hook.Run("CharacterKicked", self, client, reason)
+            -- Default the reason to an empty string.
+            if (type(reason) ~= "string") then
+                reason = ""
+            end
+
+            hook.Run("CharacterKicked", self, client, reason)
+        end
     end
 
     -- Saves the character to the database.

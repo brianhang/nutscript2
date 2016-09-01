@@ -10,10 +10,7 @@ nut.char.registerVar("class", {
         return character:getData("class", 0)
     end,
     onSet = function(character, value)
-        local oldClass = character:getClass()
-
         character:setData("class", value)
-        hook.Run("CharacterClassChanged", character, oldClass, value)
 
         return false
     end,

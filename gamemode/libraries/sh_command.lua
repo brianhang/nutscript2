@@ -64,7 +64,7 @@ function nut.command.add(name, info)
     -- Add the command.
     nut.command.list[name] = info
 
-    hook.Run("CommandRegistered", name, info)
+    hook.Run("CommandAdded", name, info)
 end
 
 -- Returns whether or not a command can be ran by a player.
@@ -216,6 +216,10 @@ if (SERVER) then
         if (info) then
             local status, reason = info.onRun(client, arguments)
 
+            if (type(reason) ~= "string") then
+                reason = ""
+            end
+
             if (status == nil) then
                 status = true
             end
@@ -226,7 +230,7 @@ if (SERVER) then
                 hook.Run("CommandRan", client, command, arguments)
             end
 
-            return status, reason or ""
+            return status, reason
         end
 
         return false, "invalid command"
@@ -255,7 +259,7 @@ if (SERVER) then
     end)
 
     -- Set up a console command for the registered commands.
-    hook.Add("Initialize", "nutConsoleCommand", function()
+    hook.Add("PluginInitialized", "nutConsoleCommand", function()
         concommand.Add(nut.command.prefix, function(client, _, arguments)
             if (not arguments[1]) then
                 return
