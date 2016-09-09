@@ -165,7 +165,7 @@ if (SERVER) then
     end
 
     -- Networks the character data to the given recipient(s).
-    function CHARACTER:sync(recipient)
+    function CHARACTER:sync(recipient, ignorePrivacy)
         -- Whether or not recipient is a table.
         local isTable = type(recipient) == "table"
 
@@ -179,7 +179,7 @@ if (SERVER) then
         if (isTable) then
             for k, v in ipairs(recipient) do
                 if (type(v) == "Player" and IsValid(v)) then
-                    self:sync(v)
+                    self:sync(v, ignorePrivacy)
                 end
             end
 
@@ -197,7 +197,7 @@ if (SERVER) then
 
             -- Keep private variables to the owner only.
             if (variable.replication == CHARVAR_PRIVATE and
-                recipient ~= self:getPlayer()) then
+                recipient ~= self:getPlayer() and not ignorePrivacy) then
                 continue
             end
 
@@ -206,7 +206,7 @@ if (SERVER) then
                 variable.onSync(self, recipient) == false) then
                 continue
             end
-            
+
             -- Network this variable.
             net.Start("nutCharVar")
                 net.WriteInt(self:getID(), LONG)
