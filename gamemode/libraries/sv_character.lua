@@ -36,11 +36,10 @@ function nut.char.create(info, callback, context)
     -- Allow modifications to the given info.
     hook.Run("CharacterAdjustInfo", info, context)
 
-    -- Make sure there are no extraneous variables, but allow for
-    -- steamID to be set.
-    for k, v in pairs(info) do
-        if (k ~= "steamID" and not nut.char.vars[k]) then
-            return false, "invalid variable ("..k..")"
+    -- Make sure there are no extraneous variables.
+    for key, value in pairs(info) do
+        if (key ~= "steamID" and not nut.char.vars[key]) then
+            return false, "invalid variable ("..key..")"
         end
     end
 
@@ -49,12 +48,19 @@ function nut.char.create(info, callback, context)
         local character
 
         if (id) then
-            -- If the character was made, make an object for it and
-            -- copy the given info to the character object.
+            -- The value of a character variable.
+            local value
+
+            -- If the character was made, make an object for it.
             character = nut.char.new(id)
 
-            for k, v in pairs(info) do
-                character.vars[k] = v
+            -- Copy the given info to the character object.
+            for name, variable in pairs(nut.char.vars) do
+                if (info[variable.field] ~= nil) then
+                    character.vars[name] = info[variable.field]
+                elseif (info[name] ~= nil) then
+                    character.vars[name] = info[name]
+                end
             end
 
             hook.Run("CharacterCreated", character, context)
@@ -89,7 +95,7 @@ function nut.char.insert(info, callback)
     end
 
     -- Add some creation information.
-    data.steamID = info.steamID or "0"
+    data.steamID = info.owner or info.steamID or 0
     data.createTime = os.time()
     data.lastJoin = data.createTime
 
@@ -185,6 +191,8 @@ function nut.char.load(id, callback, reload)
             ErrorNoHalt("Failed to load character #"..id.."\n"..
                         nut.db.lastError.."\n")
         end
+
+        hook.Run("CharacterLoaded", character)
 
         -- Run the callback if one is given.
         if (type(callback) == "function") then
