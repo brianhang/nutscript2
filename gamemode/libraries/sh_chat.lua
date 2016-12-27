@@ -83,6 +83,8 @@ function nut.chat.parse(speaker, message)
             -- Get rid of the space in front if needed.
             if (noSpaceAfter and message:sub(1, 1):match("%s")) then
                 message = message:sub(MSG_START)
+            elseif (not noSpaceAfter) then
+                message = message:sub(MSG_START)
             end
         end
     end

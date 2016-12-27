@@ -140,5 +140,5 @@ local length2D = FindMetaTable("Vector").Length2D
 -- Check whether or not a player is running.
 function PLAYER:isRunning()
     return length2D(self.GetVelocity(self)) >
-           length2D(self.GetWalkSpeed(self) + SPEED_BARRIER)
+           (self.GetWalkSpeed(self) + SPEED_BARRIER)
 end

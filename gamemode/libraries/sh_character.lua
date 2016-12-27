@@ -106,7 +106,13 @@ function nut.char.registerVar(name, info)
     local upperName = name:sub(1, 1):upper()..name:sub(SECOND)
 
     -- Create a function to get the default value.
-    info.onGetDefault = info.onGetDefault or function() return info.default end
+    if (type(info.onGetDefault) ~= "function") then
+        if (type(info.default) == "table") then
+            info.onGetDefault = function() return table.Copy(info.default) end
+        else
+            info.onGetDefault = function() return info.default end
+        end
+    end
 
     -- Store the default in the metatable.
     character.vars[name] = info.onGetDefault()
