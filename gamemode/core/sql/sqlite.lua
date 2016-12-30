@@ -6,9 +6,10 @@ Purpose: Provides an implementation for the NutScript database functions
 
 nut.db.modules.sqlite = {
     connect = function(callback)
+        hook.Run("DatabaseConnected")
+        
         -- No actual connection needed.
         if (type(callback) == "function") then
-            hook.Run("DatabaseConnected")
             callback(true)
         end
     end,
