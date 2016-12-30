@@ -8,6 +8,7 @@ nut.db.modules.sqlite = {
     connect = function(callback)
         -- No actual connection needed.
         if (type(callback) == "function") then
+            hook.Run("DatabaseConnected")
             callback(true)
         end
     end,
