@@ -175,7 +175,8 @@ if (SERVER) then
             end
 
             -- Parse the arguments.
-            local argumentString = string.TrimLeft(message:sub(ARGS_START))
+            local argumentString = string.TrimLeft(message:sub(#name +
+                                                               ARGS_START))
             local arguments = nut.command.parseArgs(argumentString)
 
             -- Run the command.
