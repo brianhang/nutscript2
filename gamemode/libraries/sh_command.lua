@@ -61,6 +61,9 @@ function nut.command.add(name, info)
         end
     end
 
+    -- Add a default empty syntax.
+    info.syntax = info.syntax or ""
+    
     -- Add the command.
     nut.command.list[name] = info
 
