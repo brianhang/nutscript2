@@ -57,3 +57,57 @@ function nut.team.loadFromDir(base)
         nut.team.loadClass(base.."/classes/"..path)
     end
 end
+
+if (SERVER) then
+    -- Sets up the loadout for a team member.
+    function nut.team.loadout(client, teamID)
+        assert(type(client) == "Player", "client is not a player")
+        assert(IsValid(client), "client is not a valid player")
+
+        -- Get information about the team that the player is in.
+        local info = nut.team.list[client:Team()]
+
+        if (not info) then
+            return false
+        end
+
+        -- Get information about the class that the player is in.
+        local character = client:getChar()
+
+        if (character) then
+            local classInfo = nut.team.classes[character:getClass()]
+
+            -- Merge the class variables with the team variables.
+            if (classInfo and classInfo.team == teamID) then
+                info = table.Copy(info)
+                table.Merge(info, classInfo)
+            end
+        end
+        
+        -- Give weapons from the loadout.
+        if (type(info.loadout) == "table") then
+            for _, item in pairs(info.loadout) do
+                client:Give(item)
+            end
+        end
+
+        -- Set the various team parameters.
+        client:SetHealth(info.health or client:Health())
+        client:SetMaxHealth(info.maxHealth or client:GetMaxHealth())
+        client:SetArmor(info.armor or client:Armor())
+        client:SetRunSpeed(info.runSpeed or client:GetRunSpeed())
+        client:SetWalkSpeed(info.walkSpeed or client:GetWalkSpeed())
+
+        -- Run the onLoadout callback.
+        if (type(info.onLoadout) == "function") then
+            info:onLoadout(client)
+        end
+
+        return true
+    end
+
+    -- Implement the team loadout.
+    hook.Add("PlayerLoadout", "nutTeamLoadout", function(client)
+        nut.team.loadout(client, client:Team())
+    end)
+end
