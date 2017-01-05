@@ -33,6 +33,11 @@ function INVENTORY:delete()
     error("INVENTORY:delete() has not been overwritten!")
 end
 
+-- Loads the items within an inventory from the database.
+function INVENTORY:load()
+    error("INVENTORY:load() has not been overwritten!")
+end
+
 -- Removes an item to the inventory.
 function INVENTORY:remove()
     error("INVENTORY:remove() has not been overwritten!")

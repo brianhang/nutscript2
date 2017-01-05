@@ -74,10 +74,19 @@ local CHARACTER = nut.meta.character
 
 -- Gives the character a certain amount of money.
 function CHARACTER:giveMoney(amount)
+    assert(type(amount) == "number", "amount is not a number")
+
     self:setMoney(self:getMoney() + amount)
 end
 
 -- Takes a certain amount of money away from a character.
 function CHARACTER:takeMoney(amount)
     self:setMoney(self:getMoney() - amount)
+end
+
+-- Returns whether or not a player has the specified amount of money.
+function CHARACTER:hasMoney(amount)
+    assert(type(amount) == "number", "amount is not a number")
+
+    return self:getMoney() >= amount
 end
