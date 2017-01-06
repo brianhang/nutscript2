@@ -10,7 +10,7 @@ INVENTORY.id = 0
 
 -- Returns the string representation of the inventory.
 function INVENTORY:__tostring()
-    return "inventory"
+    return "inventory["..self.id.."]"
 end
 
 -- Returns the unique, numeric ID for the inventory.

@@ -167,10 +167,6 @@ function nut.item.restoreInv(id, callback)
             -- Create an inventory object using the results.
             local inventory = nut.item.newInv(id,
                                               tonumber(results.ownerID) or 0)
-
-            -- Store the inventory.
-            nut.item.inventories[inventory.id] = inventory
-
             hook.Run("InventoryRestored", inventory)
 
             -- Load the inventory's items.
@@ -211,7 +207,7 @@ function nut.item.restoreInvFromOwner(owner, callback, limit)
                 -- Load the inventory's items.
                 inventory:load(function()
                     hook.Run("InventoryLoaded", inventory, index)
-                    
+
                     -- Run the callback with the loaded inventory.
                     if (type(callback) == "function") then
                         callback(inventory, index)

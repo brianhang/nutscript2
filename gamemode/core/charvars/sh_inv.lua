@@ -16,25 +16,8 @@ nut.char.registerVar("inv", {
                 return
             end
 
-            -- Get who to send the inventory information to.
-            local client = character:getPlayer()
-
-            if (not IsValid(client)) then
-                return
-            end
-
             -- Store the inventory in the character.
             character.vars.inv[index] = inventory
-
-            -- Send the inventory information to the player.
-            net.Start("nutInventoryInstance")
-                net.WriteInt(inventory:getID(), LONG)
-                net.WriteInt(inventory:getOwner(), LONG)
-                net.WriteInt(index, LONG)
-            net.Send(client)
-
-            -- After, send all the items to the player.
-            inventory:sync(client)
         end
 
         -- Load all the inventories that belongs to the character.
@@ -81,7 +64,22 @@ nut.char.registerVar("inv", {
             net.WriteInt(id, LONG)
         net.Broadcast()
     end,
-    replication = CHARVAR_NONE
+    onSync = function(character, client)
+        for index, inventory in pairs(character.vars.inv) do
+            -- Send the inventory information to the player.
+            net.Start("nutInventoryInstance")
+                net.WriteInt(inventory:getID(), LONG)
+                net.WriteInt(inventory:getOwner(), LONG)
+                net.WriteInt(index, LONG)
+            net.Send(client)
+
+            -- After, send all the items to the player.
+            inventory:sync(client)
+        end
+
+        return false
+    end,
+    replication = CHARVAR_PRIVATE
 })
 
 -- Handling networking for inventories.
@@ -95,14 +93,11 @@ else
         local owner = net.ReadInt(LONG)
         local index = net.ReadInt(LONG)
 
-        -- Replicate the inventory object on the client.
-        local inventory = nut.item.newInv(id, owner)
-
         -- Store it in the given owner.
         local character = nut.char.list[owner]
-
+        
         if (character) then
-            character.vars.inv[index] = inventory
+            character.vars.inv[index] = nut.item.newInv(id, owner)
         end
     end)
 

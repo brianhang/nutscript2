@@ -61,6 +61,11 @@ function nut.char.create(info, callback, context)
                 elseif (info[name] ~= nil) then
                     character.vars[name] = info[name]
                 end
+
+                -- Notify the variable that a character was created if needed.
+                if (type(variable).onCreate == "function") then
+                    variable.onCreate(character)
+                end
             end
 
             hook.Run("CharacterCreated", character, context)
